@@ -169,23 +169,6 @@ struct DrawingCanvas: View {
                 }
             }
             
-            // Instructions overlay when Option is pressed
-            if isOptionPressed {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Text("⌥ Option Key Active - Drag to Draw")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(.blue.opacity(0.8))
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 20)
-                    }
-                }
-            }
         }
         .onAppear {
             startKeyMonitoring()
