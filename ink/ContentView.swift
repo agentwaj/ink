@@ -85,9 +85,27 @@ class DrawingModel: ObservableObject {
 
 class WindowController: ObservableObject {
     var ignoreMouseEventsCallback: ((Bool) -> Void)?
+    private var previousActiveApp: NSRunningApplication?
     
     func setIgnoreMouseEvents(_ ignore: Bool) {
+        if !ignore {
+            // Capture the currently active app before we start capturing mouse events
+            previousActiveApp = NSWorkspace.shared.frontmostApplication
+        }
+        
         ignoreMouseEventsCallback?(ignore)
+        
+        if !ignore {
+            // Immediately restore focus to the previously active app when we start capturing
+            DispatchQueue.main.async {
+                self.previousActiveApp?.activate()
+            }
+        } else if previousActiveApp != nil {
+            // Also restore focus when we stop capturing
+            DispatchQueue.main.async {
+                self.previousActiveApp?.activate()
+            }
+        }
     }
 }
 
@@ -244,6 +262,21 @@ class OverlayWindow: NSWindow {
         let contentView = NSHostingView(rootView: drawingCanvas)
         contentView.frame = self.frame
         self.contentView = contentView
+    }
+    
+    // Prevent this window from ever becoming the key window
+    override var canBecomeKey: Bool {
+        return false
+    }
+    
+    // Prevent this window from ever becoming the main window
+    override var canBecomeMain: Bool {
+        return false
+    }
+    
+    // Override to ensure we never steal focus
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        self.orderFront(sender)
     }
 }
 

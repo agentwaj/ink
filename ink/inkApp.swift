@@ -35,14 +35,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "  • Hold Option (⌥) key and drag to draw", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "  • Strokes fade after 3 seconds", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: ""))
         
         statusItem?.menu = menu
     }
     
     private func setupOverlayWindow() {
         overlayWindow = OverlayWindow()
-        overlayWindow?.makeKeyAndOrderFront(nil)
+        overlayWindow?.orderFront(nil)
     }
     
     @objc private func quitApp() {
