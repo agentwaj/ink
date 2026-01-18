@@ -24,7 +24,6 @@ struct DrawingStroke {
 class DrawingModel: ObservableObject {
     @Published var strokes: [DrawingStroke] = []
     private var currentStroke: [CGPoint] = []
-    private var fadeTimer: Timer?
     
     func startStroke(at point: CGPoint) {
         currentStroke = [point]
@@ -39,41 +38,18 @@ class DrawingModel: ObservableObject {
             let stroke = DrawingStroke(points: currentStroke, createdAt: Date())
             strokes.append(stroke)
             currentStroke = []
-            startFadeTimer()
         }
     }
     
-    private func startFadeTimer() {
-        fadeTimer?.invalidate()
-        fadeTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            let now = Date()
-            var hasChanges = false
-            
-            for i in self.strokes.indices.reversed() {
-                let age = now.timeIntervalSince(self.strokes[i].createdAt)
-                if age >= 3.0 {
-                    self.strokes.remove(at: i)
-                    hasChanges = true
-                } else if age > 2.0 {
-                    let fadeProgress = (age - 2.0) / 1.0
-                    let newOpacity = max(0, 1.0 - fadeProgress)
-                    if self.strokes[i].opacity != newOpacity {
-                        self.strokes[i].opacity = newOpacity
-                        hasChanges = true
-                    }
-                }
-            }
-            
-            if hasChanges {
-                DispatchQueue.main.async {
-                    self.objectWillChange.send()
-                }
-            }
-            
-            if self.strokes.isEmpty {
-                self.fadeTimer?.invalidate()
-                self.fadeTimer = nil
+    func updateStrokes(at time: Date) {
+        for i in strokes.indices.reversed() {
+            let age = time.timeIntervalSince(strokes[i].createdAt)
+            if age >= 3.0 {
+                strokes.remove(at: i)
+            } else if age > 2.0 {
+                let fadeProgress = (age - 2.0) / 1.0
+                let newOpacity = max(0, 1.0 - fadeProgress)
+                strokes[i].opacity = newOpacity
             }
         }
     }
@@ -122,43 +98,48 @@ struct DrawingCanvas: View {
     
     var body: some View {
         ZStack {
-            Canvas { context, size in
-                for stroke in drawingModel.strokes {
-                    if stroke.points.count > 1 {
-                        var path = Path()
-                        path.move(to: stroke.points[0])
-                        for i in 1..<stroke.points.count {
-                            path.addLine(to: stroke.points[i])
+            TimelineView(.periodic(from: .now, by: 0.1)) { context in
+                Canvas { canvasContext, size in
+                    let currentTime = context.date
+                    drawingModel.updateStrokes(at: currentTime)
+                    
+                    for stroke in drawingModel.strokes {
+                        if stroke.points.count > 1 {
+                            var path = Path()
+                            path.move(to: stroke.points[0])
+                            for i in 1..<stroke.points.count {
+                                path.addLine(to: stroke.points[i])
+                            }
+                            canvasContext.stroke(path, with: .color(.red.opacity(stroke.opacity)), lineWidth: 3)
                         }
-                        context.stroke(path, with: .color(.red.opacity(stroke.opacity)), lineWidth: 3)
+                    }
+                    
+                    let currentStroke = drawingModel.getCurrentStroke()
+                    if currentStroke.count > 1 {
+                        var path = Path()
+                        path.move(to: currentStroke[0])
+                        for i in 1..<currentStroke.count {
+                            path.addLine(to: currentStroke[i])
+                        }
+                        canvasContext.stroke(path, with: .color(.red), lineWidth: 3)
+                    }
+                    
+                    // Draw option key indicator
+                    if isOptionPressed {
+                        let indicatorRadius: CGFloat = 20
+                        let indicatorRect = CGRect(
+                            x: cursorPosition.x - indicatorRadius,
+                            y: cursorPosition.y - indicatorRadius,
+                            width: indicatorRadius * 2,
+                            height: indicatorRadius * 2
+                        )
+                        canvasContext.stroke(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.7)), lineWidth: 2)
+                        canvasContext.fill(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.1)))
                     }
                 }
-                
-                let currentStroke = drawingModel.getCurrentStroke()
-                if currentStroke.count > 1 {
-                    var path = Path()
-                    path.move(to: currentStroke[0])
-                    for i in 1..<currentStroke.count {
-                        path.addLine(to: currentStroke[i])
-                    }
-                    context.stroke(path, with: .color(.red), lineWidth: 3)
-                }
-                
-                // Draw option key indicator
-                if isOptionPressed {
-                    let indicatorRadius: CGFloat = 20
-                    let indicatorRect = CGRect(
-                        x: cursorPosition.x - indicatorRadius,
-                        y: cursorPosition.y - indicatorRadius,
-                        width: indicatorRadius * 2,
-                        height: indicatorRadius * 2
-                    )
-                    context.stroke(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.7)), lineWidth: 2)
-                    context.fill(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.1)))
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .local)
                     .onChanged { value in
