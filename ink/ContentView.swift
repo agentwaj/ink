@@ -113,7 +113,7 @@ struct DrawingCanvas: View {
                             for i in 1..<stroke.points.count {
                                 path.addLine(to: stroke.points[i])
                             }
-                            canvasContext.stroke(path, with: .color(.red.opacity(stroke.opacity)), lineWidth: 3)
+                            canvasContext.stroke(path, with: .color(.red.opacity(stroke.opacity)), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
                         }
                     }
                     
@@ -124,7 +124,7 @@ struct DrawingCanvas: View {
                         for i in 1..<currentStroke.count {
                             path.addLine(to: currentStroke[i])
                         }
-                        canvasContext.stroke(path, with: .color(.red), lineWidth: 3)
+                        canvasContext.stroke(path, with: .color(.red), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
                     }
                     
                     // Ultra-simple glow at cursor position  
