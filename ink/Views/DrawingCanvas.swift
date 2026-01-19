@@ -1,0 +1,130 @@
+import AppKit
+import SwiftUI
+
+struct DrawingCanvas: View {
+    @StateObject private var drawingModel = DrawingModel()
+    @ObservedObject private var windowController: WindowController
+    @State private var isOptionPressed = false
+    @State private var isDrawing = false
+    @State private var cursorPosition = CGPoint.zero
+
+    init(windowController: WindowController) {
+        self.windowController = windowController
+    }
+
+    var body: some View {
+        ZStack {
+            TimelineView(.periodic(from: .now, by: DrawingConstants.frameDuration)) { context in
+                Canvas { canvasContext, _ in
+                    let currentTime = context.date
+                    drawingModel.updateStrokes(at: currentTime)
+
+                    // Render completed strokes
+                    for stroke in drawingModel.strokes {
+                        drawStroke(stroke.points, opacity: stroke.opacity, on: canvasContext)
+                    }
+
+                    // Render current stroke
+                    drawStroke(drawingModel.currentStrokePoints, opacity: 1.0, on: canvasContext)
+
+                    // Render glow effect
+                    if isOptionPressed {
+                        drawGlowEffect(at: cursorPosition, time: currentTime.timeIntervalSinceReferenceDate, on: canvasContext)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { value in
+                        cursorPosition = value.location
+                        if isOptionPressed {
+                            if !isDrawing {
+                                drawingModel.startStroke(at: value.location)
+                                isDrawing = true
+                            } else {
+                                drawingModel.addPoint(value.location)
+                            }
+                        }
+                    }
+                    .onEnded { _ in
+                        if isDrawing {
+                            drawingModel.endStroke()
+                            isDrawing = false
+                        }
+                    }
+            )
+            .onContinuousHover { phase in
+                switch phase {
+                case let .active(location):
+                    cursorPosition = location
+                case .ended:
+                    break
+                }
+            }
+        }
+        .onAppear {
+            startKeyMonitoring()
+        }
+    }
+
+    private func drawStroke(_ points: [CGPoint], opacity: Double, on context: GraphicsContext) {
+        guard points.count > 1 else { return }
+
+        var path = Path()
+        path.move(to: points[0])
+
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+
+        context.stroke(path, with: .color(.white.opacity(opacity)), style: DrawingConstants.strokeStyle)
+    }
+
+    private func drawGlowEffect(at position: CGPoint, time: TimeInterval, on context: GraphicsContext) {
+        let pulseValue = sin(time * DrawingConstants.glowPulseSpeed) * DrawingConstants.glowPulseAmount + 1.0
+
+        drawGlowLayer(at: position, radius: DrawingConstants.glowOuterRadius, opacity: 0.1, pulse: pulseValue, on: context)
+        drawGlowLayer(at: position, radius: DrawingConstants.glowMiddleRadius, opacity: 0.3, pulse: pulseValue, on: context)
+        drawGlowLayer(at: position, radius: DrawingConstants.glowInnerRadius, opacity: 0.6, pulse: pulseValue, on: context)
+    }
+
+    private func drawGlowLayer(at position: CGPoint, radius: Double, opacity: Double, pulse: Double, on context: GraphicsContext) {
+        let adjustedRadius = radius * pulse
+        let gradient = Gradient(colors: [.white.opacity(opacity * pulse), .clear])
+        let rect = CGRect(center: position, size: CGSize(width: adjustedRadius * 2, height: adjustedRadius * 2))
+
+        context.fill(
+            Circle().path(in: rect),
+            with: .radialGradient(gradient, center: position, startRadius: 0, endRadius: adjustedRadius)
+        )
+    }
+
+    private func startKeyMonitoring() {
+        NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { event in
+            let optionPressed = event.modifierFlags.contains(.option)
+            if optionPressed != isOptionPressed {
+                isOptionPressed = optionPressed
+                windowController.setIgnoreMouseEvents(!optionPressed)
+                if !optionPressed, isDrawing {
+                    drawingModel.endStroke()
+                    isDrawing = false
+                }
+            }
+        }
+
+        NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { event in
+            let optionPressed = event.modifierFlags.contains(.option)
+            if optionPressed != isOptionPressed {
+                isOptionPressed = optionPressed
+                windowController.setIgnoreMouseEvents(!optionPressed)
+                if !optionPressed, isDrawing {
+                    drawingModel.endStroke()
+                    isDrawing = false
+                }
+            }
+            return event
+        }
+    }
+}
