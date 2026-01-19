@@ -4,7 +4,7 @@ import SwiftUI
 struct DrawingCanvas: View {
     @StateObject private var drawingModel = DrawingModel()
     @ObservedObject private var windowController: WindowController
-    @State private var isOptionPressed = false
+    @State private var isModifierPressed = false
     @State private var isDrawing = false
     @State private var cursorPosition = CGPoint.zero
 
@@ -28,7 +28,7 @@ struct DrawingCanvas: View {
                     drawStroke(drawingModel.currentStrokePoints, opacity: 1.0, on: canvasContext)
 
                     // Render glow effect
-                    if isOptionPressed {
+                    if isModifierPressed {
                         drawGlowEffect(at: cursorPosition, time: currentTime.timeIntervalSinceReferenceDate, on: canvasContext)
                     }
                 }
@@ -39,7 +39,7 @@ struct DrawingCanvas: View {
                 DragGesture(minimumDistance: 0, coordinateSpace: .local)
                     .onChanged { value in
                         cursorPosition = value.location
-                        if isOptionPressed {
+                        if isModifierPressed {
                             if !isDrawing {
                                 drawingModel.startStroke(at: value.location)
                                 isDrawing = true
@@ -103,11 +103,11 @@ struct DrawingCanvas: View {
 
     private func startKeyMonitoring() {
         NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { event in
-            let optionPressed = event.modifierFlags.contains(.option)
-            if optionPressed != isOptionPressed {
-                isOptionPressed = optionPressed
-                windowController.setIgnoreMouseEvents(!optionPressed)
-                if !optionPressed, isDrawing {
+            let optionShiftPressed = event.modifierFlags.contains([.option, .shift])
+            if optionShiftPressed != isModifierPressed {
+                isModifierPressed = optionShiftPressed
+                windowController.setIgnoreMouseEvents(!optionShiftPressed)
+                if !optionShiftPressed, isDrawing {
                     drawingModel.endStroke()
                     isDrawing = false
                 }
@@ -115,11 +115,11 @@ struct DrawingCanvas: View {
         }
 
         NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { event in
-            let optionPressed = event.modifierFlags.contains(.option)
-            if optionPressed != isOptionPressed {
-                isOptionPressed = optionPressed
-                windowController.setIgnoreMouseEvents(!optionPressed)
-                if !optionPressed, isDrawing {
+            let optionShiftPressed = event.modifierFlags.contains([.option, .shift])
+            if optionShiftPressed != isModifierPressed {
+                isModifierPressed = optionShiftPressed
+                windowController.setIgnoreMouseEvents(!optionShiftPressed)
+                if !optionShiftPressed, isDrawing {
                     drawingModel.endStroke()
                     isDrawing = false
                 }

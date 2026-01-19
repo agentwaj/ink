@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Ink", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Instructions:", action: nil, keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "  • Hold Option (⌥) key and drag to draw", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "  • Hold Option + Shift (⌥⇧) and drag to draw", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "  • Strokes fade after 3 seconds", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: ""))
