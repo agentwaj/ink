@@ -7,18 +7,44 @@
 
 import SwiftUI
 import AppKit
-import Carbon
 import Combine
+
+// MARK: - Extensions
+private extension CGRect {
+    init(center: CGPoint, size: CGSize) {
+        self.init(
+            x: center.x - size.width / 2,
+            y: center.y - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
+    }
+}
+
+// MARK: - Constants
+private enum DrawingConstants {
+    static let strokeWidth: CGFloat = 3
+    static let fadeStartTime: TimeInterval = 2.0
+    static let totalFadeTime: TimeInterval = 3.0
+    static let frameDuration: TimeInterval = 0.016 // 60fps
+    
+    static let glowPulseSpeed: Double = 4
+    static let glowPulseAmount: Double = 0.2
+    static let glowOuterRadius: Double = 20.0
+    static let glowMiddleRadius: Double = 12.0
+    static let glowInnerRadius: Double = 6.0
+    
+    static let strokeStyle = StrokeStyle(
+        lineWidth: strokeWidth,
+        lineCap: .round,
+        lineJoin: .round
+    )
+}
 
 struct DrawingStroke {
     let points: [CGPoint]
     let createdAt: Date
     var opacity: Double = 1.0
-    
-    init(points: [CGPoint], createdAt: Date) {
-        self.points = points
-        self.createdAt = createdAt
-    }
 }
 
 class DrawingModel: ObservableObject {
@@ -35,7 +61,7 @@ class DrawingModel: ObservableObject {
     
     func endStroke() {
         if !currentStroke.isEmpty {
-            let stroke = DrawingStroke(points: currentStroke, createdAt: Date())
+            let stroke = DrawingStroke(points: currentStroke, createdAt: Date(), opacity: 1.0)
             strokes.append(stroke)
             currentStroke = []
         }
@@ -46,20 +72,17 @@ class DrawingModel: ObservableObject {
         DispatchQueue.main.async {
             for i in self.strokes.indices.reversed() {
                 let age = time.timeIntervalSince(self.strokes[i].createdAt)
-                if age >= 3.0 {
+                if age >= DrawingConstants.totalFadeTime {
                     self.strokes.remove(at: i)
-                } else if age > 2.0 {
-                    let fadeProgress = (age - 2.0) / 1.0
-                    let newOpacity = max(0, 1.0 - fadeProgress)
-                    self.strokes[i].opacity = newOpacity
+                } else if age > DrawingConstants.fadeStartTime {
+                    let fadeProgress = (age - DrawingConstants.fadeStartTime) / (DrawingConstants.totalFadeTime - DrawingConstants.fadeStartTime)
+                    self.strokes[i].opacity = max(0, 1.0 - fadeProgress)
                 }
             }
         }
     }
     
-    func getCurrentStroke() -> [CGPoint] {
-        return currentStroke
-    }
+    var currentStrokePoints: [CGPoint] { currentStroke }
 }
 
 class WindowController: ObservableObject {
@@ -68,21 +91,14 @@ class WindowController: ObservableObject {
     
     func setIgnoreMouseEvents(_ ignore: Bool) {
         if !ignore {
-            // Capture the currently active app before we start capturing mouse events
             previousActiveApp = NSWorkspace.shared.frontmostApplication
         }
         
         ignoreMouseEventsCallback?(ignore)
         
-        if !ignore {
-            // Immediately restore focus to the previously active app when we start capturing
+        if let activeApp = previousActiveApp {
             DispatchQueue.main.async {
-                self.previousActiveApp?.activate()
-            }
-        } else if previousActiveApp != nil {
-            // Also restore focus when we stop capturing
-            DispatchQueue.main.async {
-                self.previousActiveApp?.activate()
+                activeApp.activate()
             }
         }
     }
@@ -101,55 +117,22 @@ struct DrawingCanvas: View {
     
     var body: some View {
         ZStack {
-            TimelineView(.periodic(from: .now, by: 0.016)) { context in
+            TimelineView(.periodic(from: .now, by: DrawingConstants.frameDuration)) { context in
                 Canvas { canvasContext, size in
                     let currentTime = context.date
                     drawingModel.updateStrokes(at: currentTime)
                     
+                    // Render completed strokes
                     for stroke in drawingModel.strokes {
-                        if stroke.points.count > 1 {
-                            var path = Path()
-                            path.move(to: stroke.points[0])
-                            for i in 1..<stroke.points.count {
-                                path.addLine(to: stroke.points[i])
-                            }
-                            canvasContext.stroke(path, with: .color(.red.opacity(stroke.opacity)), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                        }
+                        drawStroke(stroke.points, opacity: stroke.opacity, on: canvasContext)
                     }
                     
-                    let currentStroke = drawingModel.getCurrentStroke()
-                    if currentStroke.count > 1 {
-                        var path = Path()
-                        path.move(to: currentStroke[0])
-                        for i in 1..<currentStroke.count {
-                            path.addLine(to: currentStroke[i])
-                        }
-                        canvasContext.stroke(path, with: .color(.red), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                    }
+                    // Render current stroke
+                    drawStroke(drawingModel.currentStrokePoints, opacity: 1.0, on: canvasContext)
                     
-                    // Ultra-simple glow at cursor position  
+                    // Render glow effect
                     if isOptionPressed {
-                        let centerX = cursorPosition.x
-                        let centerY = cursorPosition.y
-                        let time = currentTime.timeIntervalSinceReferenceDate
-                        
-                        // Just three simple circles for performance
-                        let pulse = 1.0 + 0.2 * sin(time * 4)
-                        
-                        // Outer glow
-                        let outerRadius = 20.0 * pulse
-                        let outerRect = CGRect(x: centerX - outerRadius, y: centerY - outerRadius, width: outerRadius * 2, height: outerRadius * 2)
-                        canvasContext.fill(Circle().path(in: outerRect), with: .color(.blue.opacity(0.1)))
-                        
-                        // Middle glow  
-                        let middleRadius = 12.0 * pulse
-                        let middleRect = CGRect(x: centerX - middleRadius, y: centerY - middleRadius, width: middleRadius * 2, height: middleRadius * 2)
-                        canvasContext.fill(Circle().path(in: middleRect), with: .color(.blue.opacity(0.2)))
-                        
-                        // Inner core
-                        let innerRadius = 6.0 * pulse
-                        let innerRect = CGRect(x: centerX - innerRadius, y: centerY - innerRadius, width: innerRadius * 2, height: innerRadius * 2)
-                        canvasContext.fill(Circle().path(in: innerRect), with: .color(.cyan.opacity(0.4)))
+                        drawGlowEffect(at: cursorPosition, time: currentTime.timeIntervalSinceReferenceDate, on: canvasContext)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -190,6 +173,38 @@ struct DrawingCanvas: View {
         }
     }
     
+    private func drawStroke(_ points: [CGPoint], opacity: Double, on context: GraphicsContext) {
+        guard points.count > 1 else { return }
+        
+        var path = Path()
+        path.move(to: points[0])
+        
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+        
+        context.stroke(path, with: .color(.white.opacity(opacity)), style: DrawingConstants.strokeStyle)
+    }
+    
+    private func drawGlowEffect(at position: CGPoint, time: TimeInterval, on context: GraphicsContext) {
+        let pulseValue = sin(time * DrawingConstants.glowPulseSpeed) * DrawingConstants.glowPulseAmount + 1.0
+        
+        drawGlowLayer(at: position, radius: DrawingConstants.glowOuterRadius, opacity: 0.1, pulse: pulseValue, on: context)
+        drawGlowLayer(at: position, radius: DrawingConstants.glowMiddleRadius, opacity: 0.3, pulse: pulseValue, on: context)
+        drawGlowLayer(at: position, radius: DrawingConstants.glowInnerRadius, opacity: 0.6, pulse: pulseValue, on: context)
+    }
+    
+    private func drawGlowLayer(at position: CGPoint, radius: Double, opacity: Double, pulse: Double, on context: GraphicsContext) {
+        let adjustedRadius = radius * pulse
+        let gradient = Gradient(colors: [.white.opacity(opacity * pulse), .clear])
+        let rect = CGRect(center: position, size: CGSize(width: adjustedRadius * 2, height: adjustedRadius * 2))
+        
+        context.fill(
+            Circle().path(in: rect),
+            with: .radialGradient(gradient, center: position, startRadius: 0, endRadius: adjustedRadius)
+        )
+    }
+    
     private func startKeyMonitoring() {
         NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { event in
             let optionPressed = event.modifierFlags.contains(.option)
@@ -221,41 +236,47 @@ struct DrawingCanvas: View {
 class OverlayWindow: NSWindow {
     private let mouseController = WindowController()
     
+    convenience init() {
+        self.init(
+            contentRect: NSScreen.main?.frame ?? .zero,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+    }
+    
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
-        super.init(contentRect: NSScreen.main?.frame ?? NSRect.zero, styleMask: [.borderless], backing: .buffered, defer: false)
+        super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
+        setupWindow()
+        setupContent()
+    }
+    
+    private func setupWindow() {
+        level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+        backgroundColor = .clear
+        isOpaque = false
+        ignoresMouseEvents = true
+        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         
-        self.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
-        self.backgroundColor = NSColor.clear
-        self.isOpaque = false
-        self.ignoresMouseEvents = true // Start with mouse events ignored
-        self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
-        
-        // Set up callback to control mouse event handling
         mouseController.ignoreMouseEventsCallback = { [weak self] ignore in
             DispatchQueue.main.async {
                 self?.ignoresMouseEvents = ignore
             }
         }
-        
+    }
+    
+    private func setupContent() {
         let drawingCanvas = DrawingCanvas(windowController: mouseController)
-        let contentView = NSHostingView(rootView: drawingCanvas)
-        contentView.frame = self.frame
-        self.contentView = contentView
+        let hostingView = NSHostingView(rootView: drawingCanvas)
+        hostingView.frame = frame
+        contentView = hostingView
     }
     
-    // Prevent this window from ever becoming the key window
-    override var canBecomeKey: Bool {
-        return false
-    }
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
     
-    // Prevent this window from ever becoming the main window
-    override var canBecomeMain: Bool {
-        return false
-    }
-    
-    // Override to ensure we never steal focus
     override func makeKeyAndOrderFront(_ sender: Any?) {
-        self.orderFront(sender)
+        orderFront(sender)
     }
 }
 
