@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Constants
 
 enum DrawingConstants {
-    static let strokeWidth: CGFloat = 3
+    static let strokeWidth: CGFloat = 2
     static let fadeStartTime: TimeInterval = 2.0
     static let totalFadeTime: TimeInterval = 3.0
     static let frameDuration: TimeInterval = 0.016 // 60fps
@@ -16,6 +16,18 @@ enum DrawingConstants {
 
     static let strokeStyle = StrokeStyle(
         lineWidth: strokeWidth,
+        lineCap: .round,
+        lineJoin: .round
+    )
+
+    static let strokeGlowStyle1 = StrokeStyle(
+        lineWidth: strokeWidth * 3,
+        lineCap: .round,
+        lineJoin: .round
+    )
+
+    static let strokeGlowStyle2 = StrokeStyle(
+        lineWidth: strokeWidth * 5,
         lineCap: .round,
         lineJoin: .round
     )

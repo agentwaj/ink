@@ -79,7 +79,9 @@ struct DrawingCanvas: View {
             path.addLine(to: point)
         }
 
-        context.stroke(path, with: .color(.white.opacity(opacity)), style: DrawingConstants.strokeStyle)
+        context.stroke(path, with: .color(.green.opacity(opacity * 0.25)), style: DrawingConstants.strokeGlowStyle2)
+        context.stroke(path, with: .color(.green.opacity(opacity * 0.5)), style: DrawingConstants.strokeGlowStyle1)
+        context.stroke(path, with: .color(.green.opacity(opacity)), style: DrawingConstants.strokeStyle)
     }
 
     private func drawGlowEffect(at position: CGPoint, time: TimeInterval, on context: GraphicsContext) {
