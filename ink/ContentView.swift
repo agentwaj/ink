@@ -98,7 +98,7 @@ struct DrawingCanvas: View {
     
     var body: some View {
         ZStack {
-            TimelineView(.periodic(from: .now, by: 0.1)) { context in
+            TimelineView(.periodic(from: .now, by: 0.016)) { context in
                 Canvas { canvasContext, size in
                     let currentTime = context.date
                     drawingModel.updateStrokes(at: currentTime)
@@ -124,17 +124,29 @@ struct DrawingCanvas: View {
                         canvasContext.stroke(path, with: .color(.red), lineWidth: 3)
                     }
                     
-                    // Draw option key indicator
+                    // Ultra-simple glow at cursor position  
                     if isOptionPressed {
-                        let indicatorRadius: CGFloat = 20
-                        let indicatorRect = CGRect(
-                            x: cursorPosition.x - indicatorRadius,
-                            y: cursorPosition.y - indicatorRadius,
-                            width: indicatorRadius * 2,
-                            height: indicatorRadius * 2
-                        )
-                        canvasContext.stroke(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.7)), lineWidth: 2)
-                        canvasContext.fill(Circle().path(in: indicatorRect), with: .color(.blue.opacity(0.1)))
+                        let centerX = cursorPosition.x
+                        let centerY = cursorPosition.y
+                        let time = currentTime.timeIntervalSinceReferenceDate
+                        
+                        // Just three simple circles for performance
+                        let pulse = 1.0 + 0.2 * sin(time * 4)
+                        
+                        // Outer glow
+                        let outerRadius = 20.0 * pulse
+                        let outerRect = CGRect(x: centerX - outerRadius, y: centerY - outerRadius, width: outerRadius * 2, height: outerRadius * 2)
+                        canvasContext.fill(Circle().path(in: outerRect), with: .color(.blue.opacity(0.1)))
+                        
+                        // Middle glow  
+                        let middleRadius = 12.0 * pulse
+                        let middleRect = CGRect(x: centerX - middleRadius, y: centerY - middleRadius, width: middleRadius * 2, height: middleRadius * 2)
+                        canvasContext.fill(Circle().path(in: middleRect), with: .color(.blue.opacity(0.2)))
+                        
+                        // Inner core
+                        let innerRadius = 6.0 * pulse
+                        let innerRect = CGRect(x: centerX - innerRadius, y: centerY - innerRadius, width: innerRadius * 2, height: innerRadius * 2)
+                        canvasContext.fill(Circle().path(in: innerRect), with: .color(.cyan.opacity(0.4)))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
