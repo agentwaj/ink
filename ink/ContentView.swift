@@ -42,14 +42,17 @@ class DrawingModel: ObservableObject {
     }
     
     func updateStrokes(at time: Date) {
-        for i in strokes.indices.reversed() {
-            let age = time.timeIntervalSince(strokes[i].createdAt)
-            if age >= 3.0 {
-                strokes.remove(at: i)
-            } else if age > 2.0 {
-                let fadeProgress = (age - 2.0) / 1.0
-                let newOpacity = max(0, 1.0 - fadeProgress)
-                strokes[i].opacity = newOpacity
+        // Defer the updates to avoid "Publishing changes from within view updates" warning
+        DispatchQueue.main.async {
+            for i in self.strokes.indices.reversed() {
+                let age = time.timeIntervalSince(self.strokes[i].createdAt)
+                if age >= 3.0 {
+                    self.strokes.remove(at: i)
+                } else if age > 2.0 {
+                    let fadeProgress = (age - 2.0) / 1.0
+                    let newOpacity = max(0, 1.0 - fadeProgress)
+                    self.strokes[i].opacity = newOpacity
+                }
             }
         }
     }
