@@ -17,12 +17,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "pencil.circle", accessibilityDescription: "Ink Drawing")
-            button.toolTip = "Ink - Hold Option key to draw"
+            button.image = NSImage(systemSymbolName: "scribble.variable", accessibilityDescription: "Ink")
+            button.toolTip = "Ink"
         }
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Ink Drawing App", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Ink", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Instructions:", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "  • Hold Option (⌥) key and drag to draw", action: nil, keyEquivalent: ""))
