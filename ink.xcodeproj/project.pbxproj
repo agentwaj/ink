@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		03487CCA2F1C776100672CD8 /* ink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ink.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		03487CCA2F1C776100672CD8 /* Ink.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ink.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,7 +40,7 @@
 		03487CCB2F1C776100672CD8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				03487CCA2F1C776100672CD8 /* ink.app */,
+				03487CCA2F1C776100672CD8 /* Ink.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		03487CC92F1C776100672CD8 /* ink */ = {
+		03487CC92F1C776100672CD8 /* Ink */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 03487CD52F1C776100672CD8 /* Build configuration list for PBXNativeTarget "ink" */;
+			buildConfigurationList = 03487CD52F1C776100672CD8 /* Build configuration list for PBXNativeTarget "Ink" */;
 			buildPhases = (
 				03487CC62F1C776100672CD8 /* Sources */,
 				03487CC72F1C776100672CD8 /* Frameworks */,
@@ -63,11 +63,11 @@
 			fileSystemSynchronizedGroups = (
 				03487CCC2F1C776100672CD8 /* ink */,
 			);
-			name = ink;
+			name = Ink;
 			packageProductDependencies = (
 			);
 			productName = ink;
-			productReference = 03487CCA2F1C776100672CD8 /* ink.app */;
+			productReference = 03487CCA2F1C776100672CD8 /* Ink.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				03487CC92F1C776100672CD8 /* ink */,
+				03487CC92F1C776100672CD8 /* Ink */,
 			);
 		};
 /* End PBXProject section */
@@ -259,6 +259,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Ink;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -291,6 +292,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Ink;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -321,7 +323,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		03487CD52F1C776100672CD8 /* Build configuration list for PBXNativeTarget "ink" */ = {
+		03487CD52F1C776100672CD8 /* Build configuration list for PBXNativeTarget "Ink" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				03487CD62F1C776100672CD8 /* Debug */,
