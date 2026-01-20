@@ -85,22 +85,21 @@ struct DrawingCanvas: View {
     }
 
     private func drawGlowEffect(at position: CGPoint, time: TimeInterval, on context: GraphicsContext) {
-        let pulseValue = sin(time * DrawingConstants.glowPulseSpeed) * DrawingConstants.glowPulseAmount + 1.0
+        let pulse = sin(time * DrawingConstants.glowPulseSpeed) * DrawingConstants.glowPulseAmount + 1.0
+        for (radius, opacity) in [
+            (DrawingConstants.glowOuterRadius, 0.1),
+            (DrawingConstants.glowMiddleRadius, 0.3),
+            (DrawingConstants.glowInnerRadius, 0.6),
+        ] {
+            let adjustedRadius = radius * pulse
+            let gradient = Gradient(colors: [.white.opacity(opacity * pulse), .clear])
+            let rect = CGRect(center: position, size: CGSize(width: adjustedRadius * 2, height: adjustedRadius * 2))
 
-        drawGlowLayer(at: position, radius: DrawingConstants.glowOuterRadius, opacity: 0.1, pulse: pulseValue, on: context)
-        drawGlowLayer(at: position, radius: DrawingConstants.glowMiddleRadius, opacity: 0.3, pulse: pulseValue, on: context)
-        drawGlowLayer(at: position, radius: DrawingConstants.glowInnerRadius, opacity: 0.6, pulse: pulseValue, on: context)
-    }
-
-    private func drawGlowLayer(at position: CGPoint, radius: Double, opacity: Double, pulse: Double, on context: GraphicsContext) {
-        let adjustedRadius = radius * pulse
-        let gradient = Gradient(colors: [.white.opacity(opacity * pulse), .clear])
-        let rect = CGRect(center: position, size: CGSize(width: adjustedRadius * 2, height: adjustedRadius * 2))
-
-        context.fill(
-            Circle().path(in: rect),
-            with: .radialGradient(gradient, center: position, startRadius: 0, endRadius: adjustedRadius)
-        )
+            context.fill(
+                Circle().path(in: rect),
+                with: .radialGradient(gradient, center: position, startRadius: 0, endRadius: adjustedRadius)
+            )
+        }
     }
 
     private func startKeyMonitoring() {

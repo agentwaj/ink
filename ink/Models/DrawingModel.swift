@@ -15,7 +15,7 @@ class DrawingModel: ObservableObject {
 
     func endStroke() {
         if !currentStroke.isEmpty {
-            let stroke = DrawingStroke(points: currentStroke, createdAt: Date(), opacity: 1.0)
+            let stroke = DrawingStroke(points: currentStroke, createdAt: Date())
             strokes.append(stroke)
             currentStroke = []
         }
