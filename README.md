@@ -8,4 +8,10 @@
 
 <p align="center">Strokes disappear after 3 seconds.</p>
 
-<p align="center">That's it :)</p>
+<p align="center">That's it!</p>
+
+<p align="center">Pairs well with macOS Accessibility Zoom:</p>
+
+<p align="center">
+  <img width="800" height="600" alt="Demo" src="https://github.com/user-attachments/assets/3e5ed1fb-5088-4ef9-9ae3-fd6fc7d0a1d3" />
+</p>
